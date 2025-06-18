@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Music Playlist</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-200 to-indigo-300 min-h-screen flex flex-col items-center p-6">
+
+  <h1 class="text-4xl font-bold text-indigo-800 mb-6">🎵 My Music Playlist</h1>
+
+  <!-- Song Form -->
+  <form id="songForm" class="w-full max-w-md bg-white rounded-xl shadow-md p-6 space-y-4 mb-8">
+    <input type="text" id="title" placeholder="Song Title" class="w-full p-2 border rounded" required />
+    <input type="text" id="artist" placeholder="Artist" class="w-full p-2 border rounded" required />
+    <input type="text" id="genre" placeholder="Genre (Optional)" class="w-full p-2 border rounded" />
+    <input type="text" id="duration" placeholder="Duration (e.g., 3:45)" class="w-full p-2 border rounded" />
+    <input type="text" id="youtube" placeholder="YouTube Link (Optional)" class="w-full p-2 border rounded" />
+
+
+    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded">
+      Add Song
+    </button>
+  </form>
+
+  <!-- Playlist Display -->
+  <div id="playlist" class="w-full max-w-xl space-y-4"></div>
+
+  <script>
+    const API_URL = '/api/songs';
+
+    async function fetchSongs() {
+      const res = await fetch(API_URL);
+      const songs = await res.json();
+      const playlist = document.getElementById('playlist');
+      playlist.innerHTML = '';
+
+      if (songs.length === 0) {
+        playlist.innerHTML = '<p class="text-center text-gray-700">No songs in your playlist yet.</p>';
+        return;
+      }
+
+      songs.forEach(song => {
+        const songCard = document.createElement('div');
+        songCard.className = 'bg-white shadow-md rounded-xl p-4 flex justify-between items-center';
+
+        songCard.innerHTML = `
+          <div>
+            <h3 class="text-xl font-bold">${song.title}</h3>
+            <p class="text-gray-600">${song.artist} · ${song.genre || 'Unknown'} · ${song.duration || 'Unknown'}</p>
+            ${song.youtube ? `<a href="${song.youtube}" target="_blank" class="text-blue-600 underline">▶️ Watch on YouTube</a>` : ''}
+          </div>
+          <button onclick="deleteSong('${song._id}')" class="text-red-500 hover:text-red-700 font-bold">🗑️</button>
+        `;
+
+        playlist.appendChild(songCard);
+      });
+    }
+
+    async function deleteSong(id) {
+      //await fetch(\`\${API_URL}/\${id}\`, { method: 'DELETE' });
+      await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+
+      fetchSongs();
+    }
+
+    document.getElementById('songForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const song = {
+        title: document.getElementById('title').value,
+        artist: document.getElementById('artist').value,
+        genre: document.getElementById('genre').value,
+        duration: document.getElementById('duration').value,
+        youtube: document.getElementById('youtube').value
+      };
+
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(song)
+      });
+
+      e.target.reset();
+      fetchSongs();
+    });
+
+    // Load songs on page load
+    fetchSongs();
+  </script>
+
+</body>
+</html>
